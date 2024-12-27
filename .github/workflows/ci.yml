@@ -24,4 +24,4 @@ jobs:
         run: pycodestyle mpesa_sdk/ tests/
 
       - name: Run tests
-      run: python3 -m unittest discover || (echo "Tests failed! See logs for details" && exit 1)
+        run: python3 -m unittest discover || (echo "Tests failed! See logs for details" && exit 1)
