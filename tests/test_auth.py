@@ -62,6 +62,29 @@ class TestAuth(unittest.TestCase):
             self.assertEqual(token.token_type, "Bearer")
             self.assertEqual(token.expires_in, 3600)
 
+    @patch('mpesa.auth.auth.APIClient.get')
+    def test_get_token_validation_error(self, mock_get):
+        """Test token response validation error handling."""
+        mock_get.return_value = {
+            "access_token": None,
+            "token_type": "Bearer",
+            "expires_in": "invalid"
+        }
+        with self.assertRaises(Exception):
+            with self.assertLogs(level='WARNING') as log:
+                self.auth.get_token()
+
+                # Check if the specific warning messages occurred in the logs
+                self.assertIn(
+                    "Token response validation failed: 2 validation errors" +
+                    "for TokenResponseModel", log.output[1])
+                self.assertIn(
+                    "access_token  none is not an allowed value",
+                    log.output[2])
+                self.assertIn(
+                    "expires_in  invalid literal for int() with base " +
+                    "10: 'invalid'", log.output[3])
+
 
 if __name__ == "__main__":
     unittest.main()
