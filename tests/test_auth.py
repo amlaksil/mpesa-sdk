@@ -40,6 +40,28 @@ class TestAuth(unittest.TestCase):
         self.assertEqual(
                 auth_instance.config.client_secret, self.client_secret)
 
+    @patch('mpesa.auth.auth.APIClient.get')
+    def test_get_token_success(self, mock_get):
+        """Test successful token retrieval."""
+        mock_response = {
+            "access_token": "test_access_token",
+            "token_type": "Bearer",
+            "expires_in": 3600
+        }
+        mock_get.return_value = mock_response
+
+        with patch(
+                'mpesa.auth.auth.TokenResponseModel'
+        ) as MockTokenResponseModel:
+            MockTokenResponseModel.return_value = TokenResponseModel(
+                **mock_response)
+
+            token = self.auth.get_token()
+
+            self.assertEqual(token.access_token, "test_access_token")
+            self.assertEqual(token.token_type, "Bearer")
+            self.assertEqual(token.expires_in, 3600)
+
 
 if __name__ == "__main__":
     unittest.main()
