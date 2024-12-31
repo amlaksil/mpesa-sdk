@@ -2,10 +2,18 @@
 """
 HTTP client for interacting with APIs in the M-Pesa SDK.
 
-This module provides a reusable client for interacting with RESTful APIs.
+This module provides a reusable client for sending HTTP requests
+and processing responses from RESTful APIs, with robust error handling.
 """
 import logging
+from typing import Dict, Any
 import requests
+from requests.exceptions import (
+    Timeout,
+    RequestException,
+    HTTPError,
+    ConnectionError
+    )
 from mpesa.config import Config
 from mpesa.utils.exceptions import (
         APIError,
@@ -35,29 +43,43 @@ class APIClient:
         """
         self.base_url = base_url
 
-    def get(self, endpoint: str, headers: dict, params: dict):
+    def get(
+            self, endpoint: str, headers: Dict[str, str],
+            params: Dict[str, Any], timeout: int = 10) -> Dict[str, Any]:
         """
         Sends a GET request to the to the specified API endpoint.
 
         Args:
             endpoint (str): The API endpoint to query.
-            headers (dict): Headers to include in the request.
-            params (dict): Query parameters for the request.
+            headers (Dict[str, str]): HTTP headers to include in the request.
+            params (Dict[str, Any]): Query parameters for the request.
+            timeout (int, optional): The request timeout in seconds.
+            Defaults to 10.
 
         Returns:
-            dict: Parsed JSON response from the API.
+            Dict[str, Any]: Parsed JSON response from the API.
 
         Raises:
-            APIError: If an error occurs during the request.
+            APIError: For network issues, timeouts, or unexpected errors.
         """
         url = f"{self.base_url}{endpoint}"
-        response = requests.get(
-                url, headers=headers,
-                params=params
-                )
-        return self._handle_response(response)
+        try:
+            response = requests.get(
+                url, headers=headers, params=params, timeout=timeout)
+            return self._handle_response(response)
+        except Timeout:
+            logger.error(f"Request timed out for URL: {url}")
+            raise APIError("The request timed out. Please try again later.")
+        except ConnectionError as e:
+            logger.error(f"Connection error for the URL: {url} - {str(e)}")
+            raise APIError(
+                "A network error occurred. Please check your connection.")
+        except RequestException as e:
+            logger.error(f"Unexpected error for URL: {url} - {str(e)}")
+            raise APIError("An unexpected error occurred. Please try again.")
 
-    def _handle_response(self, response):
+    def _handle_response(
+            self, response: requests.Response) -> Dict[str, Any]:
         """
         Handle API responses and raise appropriate exceptions for errors.
 
@@ -65,7 +87,7 @@ class APIClient:
             response (requests.Response): The HTTP response object.
 
         Returns:
-            dict: Parsed JSON response if the request is successful.
+            Dict[str, Any]: Parsed JSON response if the request is successful.
 
         Raises:
             APIError: For generic API errors.
@@ -75,25 +97,33 @@ class APIClient:
             InvalidGrantTypeError: For incorrect grant type
             HTTPError: For non-JSON errors or unhandled HTTP errors
         """
-        if response.status_code >= 400:
-            try:
-                error_data = response.json()
-                result_code = error_data.get("resultCode")
-                error_message = error_data.get(
-                    "resultDesc", "No description provided")
+        try:
+            # Raises HTTPError for bad responses (4xx or 5xx)
+            response.raise_for_status()
+            response_data = response.json()
+        except HTTPError as http_err:
+            logger.error(f"HTTP error occurred: {http_err}")
+            raise APIError(f"HTTP error occurred: {http_err}")
+        except ValueError as json_err:
+            logger.error(f"Error parsing JSON response: {json_err}")
+            raise APIError(
+                "Failed to parse response JSON." +
+                "Invalid response format.")
 
-                if result_code == "999991":
-                    raise InvalidClientIDError(error_message)
-                elif result_code == "999996":
-                    raise InvalidAuthenticationError(error_message)
-                elif result_code == "999997":
-                    raise InvalidAuthorizationHeaderError(error_message)
-                elif result_code == "999998":
-                    raise InvalidGrantTypeError(error_message)
-                else:
-                    logger.error(f"Unknown API error: {error_data}")
-                    raise APIError(f"Unknown API error: {error_data}")
-            except ValueError:
-                logger.exception("Error parsing JSON response.")
-                response.raise_for_status()
-        return response.json()
+        if response.status_code >= 400:
+            result_code = response_data.get("resultCode")
+            error_message = response_data.get(
+                "resultDesc", "No description provided")
+
+            if result_code == "999991":
+                raise InvalidClientIDError(error_message)
+            elif result_code == "999996":
+                raise InvalidAuthenticationError(error_message)
+            elif result_code == "999997":
+                raise InvalidAuthorizationHeaderError(error_message)
+            elif result_code == "999998":
+                raise InvalidGrantTypeError(error_message)
+            else:
+                logger.error(f"Unknown API error: {error_data}")
+                raise APIError(f"Unknown API error: {error_data}")
+        return response_data
