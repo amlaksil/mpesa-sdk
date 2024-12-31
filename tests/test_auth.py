@@ -85,6 +85,19 @@ class TestAuth(unittest.TestCase):
                     "expires_in  invalid literal for int() with base " +
                     "10: 'invalid'", log.output[3])
 
+    @patch('mpesa.auth.auth.APIClient.get')
+    def test_get_token_api_error(self, mock_get):
+        """Test API error handling during token retrieval."""
+        mock_get.side_effect = APIError("API error occurred.")
+
+        with self.assertRaises(APIError):
+            with self.assertLogs(level="WARNING") as log:
+                self.auth.get_token()
+
+                self.assertIn(
+                    "APIError occurred: API error occurred.",
+                    log.output[0])
+
 
 if __name__ == "__main__":
     unittest.main()
