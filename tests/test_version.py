@@ -1,5 +1,8 @@
 #!/usr/bin/python3
-import mpesa_sdk
+"""
+Unit tests for verifying the version of the mpesa SDK module.
+"""
+import mpesa
 import unittest
 
 
