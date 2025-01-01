@@ -109,6 +109,14 @@ class TestAuth(unittest.TestCase):
         with self.assertRaises(InvalidClientIDError):
             self.auth.get_token()
 
+    @patch("mpesa.auth.auth.Auth.get_token")
+    def test_get_token_invalid_authentication(self, mock_get):
+        """Test token retrieval with an invalid authentication type."""
+        mock_get.side_effect = InvalidAuthenticationError()
+
+        with self.assertRaises(InvalidAuthenticationError):
+            self.auth.get_token()
+
 
 if __name__ == "__main__":
     unittest.main()
