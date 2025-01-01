@@ -101,6 +101,14 @@ class TestAuth(unittest.TestCase):
         with self.assertRaises(APIError):
             self.auth.get_token()
 
+    @patch("mpesa.auth.auth.Auth.get_token")
+    def test_get_token_invalid_client_id(self, mock_get):
+        """Test handling of InvalidClientIDError."""
+        mock_get.side_effect = InvalidClientIDError()
+
+        with self.assertRaises(InvalidClientIDError):
+            self.auth.get_token()
+
 
 if __name__ == "__main__":
     unittest.main()
