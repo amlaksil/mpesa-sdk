@@ -1,6 +1,8 @@
+pydantic==2.10.4
 pycodestyle==2.11.1
 python-dotenv==1.0.1
 requests==2.31.0
 requests-oauthlib==2.0.0
 requests-toolbelt==1.0.0
 requests-unixsocket==0.2.0
+typing-extensions==4.12.2
