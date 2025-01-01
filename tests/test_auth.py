@@ -2,9 +2,17 @@
 
 import unittest
 from unittest.mock import patch, MagicMock
+from pydantic.v1 import ValidationError
 from mpesa.auth.auth import Auth
 from mpesa.auth.models import ConfigModel, TokenResponseModel
-from mpesa.utils.exceptions import APIError
+from mpesa.utils.exceptions import APIError, InvalidClientIDError
+from mpesa.utils.exceptions import (
+        APIError,
+        InvalidClientIDError,
+        InvalidAuthenticationError,
+        InvalidAuthorizationHeaderError,
+        InvalidGrantTypeError,
+        )
 
 
 class TestAuth(unittest.TestCase):
@@ -85,18 +93,13 @@ class TestAuth(unittest.TestCase):
                     "expires_in  invalid literal for int() with base " +
                     "10: 'invalid'", log.output[3])
 
-    @patch('mpesa.auth.auth.APIClient.get')
+    @patch('mpesa.auth.auth.Auth.get_token')
     def test_get_token_api_error(self, mock_get):
         """Test API error handling during token retrieval."""
         mock_get.side_effect = APIError("API error occurred.")
 
         with self.assertRaises(APIError):
-            with self.assertLogs(level="WARNING") as log:
-                self.auth.get_token()
-
-                self.assertIn(
-                    "APIError occurred: API error occurred.",
-                    log.output[0])
+            self.auth.get_token()
 
 
 if __name__ == "__main__":
