@@ -21,7 +21,7 @@ jobs:
             pip install -r requirements.txt
 
       - name: Lint code
-        run: pycodestyle mpesa_sdk/ tests/
+        run: pycodestyle mpesa/ tests/
 
       - name: Run tests
         run: python3 -m unittest discover || (echo "Tests failed! See logs for details" && exit 1)
