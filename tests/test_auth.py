@@ -133,6 +133,17 @@ class TestAuth(unittest.TestCase):
         with self.assertRaises(InvalidGrantTypeError):
             self.auth.get_token()
 
+    @patch("mpesa.auth.auth.APIClient.get")
+    def test_unexpected_error(self, mock_get):
+        """Test handling of unexpected exceptions."""
+        mock_get.side_effect = Exception("Unexpected error.")
+
+        with self.assertLogs("mpesa.auth.auth", level="CRITICAL") as cm:
+            with self.assertRaises(Exception):
+                self.auth.get_token()
+
+            self.assertIn("Unexpected error occurred", cm.output[0])
+
 
 if __name__ == "__main__":
     unittest.main()
