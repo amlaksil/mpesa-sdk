@@ -125,6 +125,14 @@ class TestAuth(unittest.TestCase):
         with self.assertRaises(InvalidAuthorizationHeaderError):
             self.auth.get_token()
 
+    @patch("mpesa.auth.auth.Auth.get_token")
+    def test_get_token_invalid_grant_type(self, mock_get):
+        """Test token retrieval with an invalid or empty grant type."""
+        mock_get.side_effect = InvalidGrantTypeError()
+
+        with self.assertRaises(InvalidGrantTypeError):
+            self.auth.get_token()
+
 
 if __name__ == "__main__":
     unittest.main()
