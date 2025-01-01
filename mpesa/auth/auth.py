@@ -10,7 +10,13 @@ import base64
 from pydantic.v1 import ValidationError
 from mpesa.auth.models import ConfigModel, TokenResponseModel
 from mpesa.utils.client import APIClient
-from mpesa.utils.exceptions import APIError
+from mpesa.utils.exceptions import (
+        APIError,
+        InvalidClientIDError,
+        InvalidAuthenticationError,
+        InvalidAuthorizationHeaderError,
+        InvalidGrantTypeError,
+        )
 
 logger = logging.getLogger(__name__)
 
@@ -74,14 +80,26 @@ class Auth:
             validated_response = TokenResponseModel(**token_response)
             logger.info("Access token successfully retrieved.")
             return validated_response
+        except (InvalidClientIDError,
+                InvalidAuthenticationError,
+                InvalidAuthorizationHeaderError,
+                InvalidGrantTypeError,
+                APIError) as e:
+            self.handle_error(e, logger)
         except ValidationError as e:
             logger.error(f"Token response validation failed: {e}")
-            raise
-        except APIError as e:
-            logger.error(f"APIError occurred: {e}")
-            if e.mitigation:
-                logger.info(f"Mitigation: {e.mitigation}")
             raise
         except Exception as e:
             logger.critical(f"Unexpected error occurred: {e}", exc_info=True)
             raise
+
+    def handle_error(self, error: Exception, logger: logging.Logger) -> None:
+        """
+        A helper method to log error messages and their mitigation.
+        Args:
+            error: The caught exception.
+            logger: The logger instance used for logging messages.
+        """
+        logger.error(f"{error.__class__.__name__}: {error}")
+        if getattr(error, 'mitigation', None):
+            logger.info(f"Mitigation: {error.mitigation}")
