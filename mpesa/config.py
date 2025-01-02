@@ -14,6 +14,6 @@ class Config:
     """
     load_dotenv()
     BASE_URL = getenv('BASE_URL', 'https://apisandbox.safaricom.et')
-    CLIENT_KEY = getenv('CLIENT_KEY', '')
-    CLIENT_SECRET = getenv('CLIENT_SECRET', '')
+    CLIENT_KEY = getenv('CLIENT_KEY', 'client key')
+    CLIENT_SECRET = getenv('CLIENT_SECRET', 'client secret')
     TIMEOUT = getenv('TIMEOUT', '30')
