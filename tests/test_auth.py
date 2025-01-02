@@ -145,6 +145,22 @@ class TestAuth(unittest.TestCase):
 
             self.assertIn("Unexpected error occurred", cm.output[0])
 
+    def test_invalid_all_params(self):
+        """Ensure Auth raises ValidationError and
+        logs errors for invalid parameters."""
+
+        with self.assertRaises(ValidationError):
+            with self.assertLogs(level="ERROR") as log:
+                Auth(base_url="", client_key="", client_secret="")
+
+            self.assertTrue(
+                    any("Configuration validation failed: 3 validation" +
+                        "errors for ConfigModel"
+                        in message for message in log.output
+                        ),
+                    "Expected error message not found in logs"
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()
