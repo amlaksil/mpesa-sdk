@@ -17,3 +17,6 @@ class Config:
     CLIENT_KEY = getenv('CLIENT_KEY', 'client key')
     CLIENT_SECRET = getenv('CLIENT_SECRET', 'client secret')
     TIMEOUT = getenv('TIMEOUT', '30')
+    MPESA_LOG_DIR = getenv('MPESA_LOG_DIR')
+    LOG_LEVEL = getenv('LOG_LEVEL', 'INFO')
+    ENVIRONMENT = getenv('ENVIRONMENT', 'TEST')
