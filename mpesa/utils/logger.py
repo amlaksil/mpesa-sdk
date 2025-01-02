@@ -16,8 +16,9 @@ maximum size of 10MB and keeps up to 5 backup logs.
 import os
 import logging
 from logging.handlers import RotatingFileHandler
+from mpesa.config import Config
 
-log_dir = os.getenv("MPESA_LOG_DIR", os.path.join(os.getcwd(), "logs"))
+log_dir = os.getenv(Config.MPESA_LOG_DIR, os.path.join(os.getcwd(), "logs"))
 os.makedirs(log_dir, exist_ok=True)
 log_file_path = os.path.join(log_dir, "mpesa.log")
 
@@ -32,7 +33,7 @@ file_handler = RotatingFileHandler(
 file_handler.setFormatter(formatter)
 
 
-def get_logger(name) -> logging.Logger:
+def get_logger(name: str) -> logging.Logger:
     """
     This function creates a logger that is module-specific, allowing
     logs to be traced back to the module that generated them.
@@ -44,10 +45,12 @@ def get_logger(name) -> logging.Logger:
         logging.Logger: The logger instance for the calling module.
     """
     logger = logging.getLogger(name)
-    logger.setLevel(os.getenv("LOG_LEVEL", "INFO"))
+    logger.setLevel(Config.LOG_LEVEL)
 
-    logger.addHandler(stream_handler)
     logger.addHandler(file_handler)
+
+    if Config.ENVIRONMENT != 'TEST':
+        logger.addHandler(stream_handler)
 
     return logger
 
