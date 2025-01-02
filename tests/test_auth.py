@@ -172,6 +172,50 @@ class TestAuth(unittest.TestCase):
                     client_secret=self.client_secret
                     )
 
+    def test_invalid_url_and_key(self):
+        """Ensure Auth raises ValidationError and
+        logs errors for invalid parameters.
+        """
+        with self.assertRaises(ValidationError):
+            Auth(
+                    base_url="invalid_url",
+                    client_key="",
+                    client_secret=self.client_secret
+                    )
+
+    def test_invalid_key_and_secret(self):
+        """Ensure Auth raises ValidationError and
+        logs errors for invalid parameters.
+        """
+        with self.assertRaises(ValidationError):
+            Auth(
+                    base_url=self.base_url,
+                    client_key="",
+                    client_secret=""
+                    )
+
+    def test_invalid_secret(self):
+        """Ensure Auth raises ValidationError and
+        logs errors for invalid parameters.
+        """
+        with self.assertRaises(ValidationError):
+            Auth(
+                    base_url=self.base_url,
+                    client_key=self.client_key,
+                    client_secret=""
+                    )
+
+    def test_invalid_key(self):
+        """Ensure Auth raises ValidationError and
+        logs errors for invalid parameters.
+        """
+        with self.assertRaises(ValidationError):
+            Auth(
+                    base_url=self.base_url,
+                    client_key="",
+                    client_secret=self.client_secret
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()
