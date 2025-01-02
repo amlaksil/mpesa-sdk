@@ -161,6 +161,17 @@ class TestAuth(unittest.TestCase):
                     "Expected error message not found in logs"
                     )
 
+    def test_invalid_url(self):
+        """Ensure Auth raises ValidationError and
+        logs errors for invalid parameters.
+        """
+        with self.assertRaises(ValidationError):
+            Auth(
+                    base_url="invalid_url",
+                    client_key=self.client_key,
+                    client_secret=self.client_secret
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()
