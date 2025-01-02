@@ -5,6 +5,7 @@ from unittest.mock import patch, MagicMock
 from pydantic.v1 import ValidationError
 from mpesa.auth.auth import Auth
 from mpesa.auth.models import ConfigModel, TokenResponseModel
+from mpesa.config import Config
 from mpesa.utils.exceptions import APIError, InvalidClientIDError
 from mpesa.utils.exceptions import (
         APIError,
@@ -18,9 +19,9 @@ from mpesa.utils.exceptions import (
 class TestAuth(unittest.TestCase):
     def setUp(self):
         """Set up test data and mocks."""
-        self.base_url = "https://sandbox.safaricom.et"
-        self.client_key = "test_client_key"
-        self.client_secret = "test_client_secret"
+        self.base_url = Config.BASE_URL
+        self.client_key = Config.CLIENT_KEY
+        self.client_secret = Config.CLIENT_SECRET
 
         self.auth = Auth(
             base_url=self.base_url,
