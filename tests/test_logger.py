@@ -1,61 +1,67 @@
 #!/usr/bin/python3
+
 import os
 import unittest
 import logging
-from unittest.mock import patch, MagicMock
-from mpesa.utils.logger import get_logger, log_file_path
-from mpesa.config import Config
+import tempfile
+from unittest.mock import patch
+from mpesa.utils.logger import get_logger
+
+
+def reset_logger(name: str):
+    """
+    Resets the logger by removing and closing all handlers.
+    """
+    logger = logging.getLogger(name)
+    while logger.handlers:
+        handler = logger.handlers[0]
+        handler.close()
+        logger.removeHandler(handler)
+    return logger
 
 
 class TestLogger(unittest.TestCase):
-    """
-    Test suite for the logger configuration and functionality.
-    """
     def setUp(self):
         """
-        Sets up a clean environment for testing by ensuring
-        the log directory is empty.
+        Sets up a temporary directory for logs and patches log_file_path.
         """
-        self.log_dir = os.getenv(
-            Config.MPESA_LOG_DIR, os.path.join(os.getcwd(), "logs"))
-        self.log_file_path = log_file_path
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.log_file_path = os.path.join(self.temp_dir.name, "mpesa.log")
 
-        if os.path.exists(self.log_dir):
-            for f in os.listdir(self.log_dir):
-                os.remove(os.path.join(self.log_dir, f))
-        else:
-            os.makedirs(self.log_dir, exist_ok=True)
+        # Patch log_file_path globally in the logger module
+        self.patcher = patch(
+               "mpesa.utils.logger.log_file_path", self.log_file_path)
+        self.patcher.start()
+
+        # Reset the logger before each test
+        reset_logger("test_logger")
 
     def tearDown(self):
         """
-        Cleans up the log directory after each test.
+        Cleans up the temporary directory and stops patches.
         """
-        if os.path.exists(self.log_dir):
-            for f in os.listdir(self.log_dir):
-                os.remove(os.path.join(self.log_dir, f))
+        self.temp_dir.cleanup()
+        self.patcher.stop()
 
-    @patch('mpesa.config.Config.LOG_LEVEL', logging.DEBUG)
-    @patch('mpesa.config.Config.ENVIRONMENT', 'DEV')
+    @patch.dict(os.environ, {"ENVIRONMENT": "DEV"})
     def test_logger_configuration(self):
         """
-        Tests that the logger is configured with the correct
-        handlers and file path.
+        Tests that the logger is configured with the correct handlers.
         """
-        logger = get_logger('test_logger')
+        logger = get_logger("test_logger")
+        logger.propagate = False  # Suppress log output
 
-        # Check if logger handlers are set correctly
         self.assertEqual(len(logger.handlers), 2)
 
         file_handler = next(h for h in logger.handlers if isinstance(
-            h, logging.handlers.RotatingFileHandler))
+               h, logging.handlers.RotatingFileHandler))
         stream_handler = next(h for h in logger.handlers if isinstance(
-            h, logging.StreamHandler))
+               h, logging.StreamHandler))
 
         self.assertIsNotNone(file_handler)
         self.assertIsNotNone(stream_handler)
-
         self.assertEqual(file_handler.baseFilename, self.log_file_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
