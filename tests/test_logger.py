@@ -62,6 +62,22 @@ class TestLogger(unittest.TestCase):
         self.assertIsNotNone(stream_handler)
         self.assertEqual(file_handler.baseFilename, self.log_file_path)
 
+    @patch.dict(os.environ, {"LOG_LEVEL": "ERROR"})
+    @patch("mpesa.utils.logger.Config.ENVIRONMENT", "TEST")
+    def test_log_file_creation(self):
+        """
+        Ensures logger creates and writes to a log file.
+        """
+        logger = get_logger("test_logger")
+        logger.propagate = False
+
+        logger.info("Testing log file creation")
+        self.assertTrue(os.path.exists(self.log_file_path))
+
+        with open(self.log_file_path, "r") as log_file:
+            content = log_file.read()
+        self.assertIn("Testing log file creation", content)
+
 
 if __name__ == "__main__":
     unittest.main()
