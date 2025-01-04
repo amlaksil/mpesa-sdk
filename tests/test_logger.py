@@ -78,6 +78,16 @@ class TestLogger(unittest.TestCase):
             content = log_file.read()
         self.assertIn("Testing log file creation", content)
 
+    @patch("mpesa.utils.logger.Config.LOG_LEVEL", "DEBUG")
+    def test_dynamic_log_level(self):
+        """
+        Confirms logger respects the dynamic log level
+        set in the configuration.
+        """
+        logger = get_logger("test_logger")
+        logger.propagate = False
+        self.assertEqual(logger.level, logging.DEBUG)
+
 
 if __name__ == "__main__":
     unittest.main()
