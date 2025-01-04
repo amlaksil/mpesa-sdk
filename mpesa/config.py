@@ -13,10 +13,10 @@ class Config:
     for the application.
     """
     load_dotenv()
-    BASE_URL = getenv('BASE_URL', 'https://apisandbox.safaricom.et')
-    CLIENT_KEY = getenv('CLIENT_KEY', 'client key')
-    CLIENT_SECRET = getenv('CLIENT_SECRET', 'client secret')
-    TIMEOUT = getenv('TIMEOUT', '30')
+    BASE_URL = getenv('BASE_URL')
+    CLIENT_KEY = getenv('CLIENT_KEY')
+    CLIENT_SECRET = getenv('CLIENT_SECRET')
+    TIMEOUT = getenv('TIMEOUT')
     MPESA_LOG_DIR = getenv('MPESA_LOG_DIR')
-    LOG_LEVEL = getenv('LOG_LEVEL', 'INFO')
-    ENVIRONMENT = getenv('ENVIRONMENT', 'TEST')
+    LOG_LEVEL = getenv('LOG_LEVEL')
+    ENVIRONMENT = getenv('ENVIRONMENT')

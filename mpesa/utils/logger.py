@@ -18,7 +18,8 @@ import logging
 from logging.handlers import RotatingFileHandler
 from mpesa.config import Config
 
-log_dir = os.getenv(Config.MPESA_LOG_DIR, os.path.join(os.getcwd(), "logs"))
+log_dir = Config.MPESA_LOG_DIR if Config.MPESA_LOG_DIR else os.path.join(
+    os.getcwd(), "logs")
 log_file_path = os.path.join(log_dir, "mpesa.log")
 
 
@@ -38,7 +39,8 @@ def get_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
 
     if not logger.handlers:
-        logger.setLevel(getattr(logging, Config.LOG_LEVEL, logging.DEBUG))
+        log_level = 'DEBUG' if not Config.LOG_LEVEL else Config.LOG_LEVEL
+        logger.setLevel(getattr(logging, log_level, logging.DEBUG))
         os.makedirs(log_dir, exist_ok=True)
 
         file_handler = RotatingFileHandler(

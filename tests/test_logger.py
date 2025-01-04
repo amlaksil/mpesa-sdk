@@ -88,6 +88,27 @@ class TestLogger(unittest.TestCase):
         logger.propagate = False
         self.assertEqual(logger.level, logging.DEBUG)
 
+    @patch("mpesa.utils.logger.RotatingFileHandler.emit")
+    @patch("mpesa.utils.logger.Config.ENVIRONMENT", "TEST")
+    def test_rotating_file_handler_emits(self, mock_emit):
+        """
+        Tests that the RotatingFileHandler's emit method is called.
+        """
+        logger = get_logger("test_logger")
+        logger.propagate = False
+
+        logger.info("Testing RotatingFileHandler")
+        mock_emit.assert_called()
+
+    @patch("mpesa.utils.logger.Config.LOG_LEVEL", "INVALID")
+    def test_invalid_log_level_defaults_to_info(self):
+        """
+        Ensures invalid log levels default to DEBUG.
+        """
+        logger = get_logger("test_logger")
+        logger.propagate = False
+        self.assertEqual(logger.level, logging.DEBUG)
+
 
 if __name__ == "__main__":
     unittest.main()
