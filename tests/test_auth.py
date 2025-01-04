@@ -19,9 +19,9 @@ from mpesa.utils.exceptions import (
 class TestAuth(unittest.TestCase):
     def setUp(self):
         """Set up test data and mocks."""
-        self.base_url = Config.BASE_URL
-        self.client_key = Config.CLIENT_KEY
-        self.client_secret = Config.CLIENT_SECRET
+        self.base_url = "https://test-url.com"
+        self.client_key = "test-client-key"
+        self.client_secret = "test_client-secret"
 
         self.auth = Auth(
             base_url=self.base_url,
