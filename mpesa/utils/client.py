@@ -15,6 +15,7 @@ from requests.exceptions import (
     ConnectionError
     )
 from mpesa.config import Config
+from mpesa.utils.logger import get_logger
 from mpesa.utils.exceptions import (
         APIError,
         InvalidClientIDError,
@@ -23,7 +24,7 @@ from mpesa.utils.exceptions import (
         InvalidGrantTypeError,
         )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class APIClient:

@@ -5,6 +5,7 @@ from unittest.mock import patch, MagicMock
 from pydantic.v1 import ValidationError
 from mpesa.auth.auth import Auth
 from mpesa.auth.models import ConfigModel, TokenResponseModel
+from mpesa.config import Config
 from mpesa.utils.exceptions import APIError, InvalidClientIDError
 from mpesa.utils.exceptions import (
         APIError,
@@ -18,9 +19,9 @@ from mpesa.utils.exceptions import (
 class TestAuth(unittest.TestCase):
     def setUp(self):
         """Set up test data and mocks."""
-        self.base_url = "https://sandbox.safaricom.et"
-        self.client_key = "test_client_key"
-        self.client_secret = "test_client_secret"
+        self.base_url = "https://test-url.com"
+        self.client_key = "test-client-key"
+        self.client_secret = "test_client-secret"
 
         self.auth = Auth(
             base_url=self.base_url,
@@ -143,6 +144,77 @@ class TestAuth(unittest.TestCase):
                 self.auth.get_token()
 
             self.assertIn("Unexpected error occurred", cm.output[0])
+
+    def test_invalid_all_params(self):
+        """Ensure Auth raises ValidationError and
+        logs errors for invalid parameters."""
+
+        with self.assertRaises(ValidationError):
+            with self.assertLogs(level="ERROR") as log:
+                Auth(base_url="", client_key="", client_secret="")
+
+            self.assertTrue(
+                    any("Configuration validation failed: 3 validation" +
+                        "errors for ConfigModel"
+                        in message for message in log.output
+                        ),
+                    "Expected error message not found in logs"
+                    )
+
+    def test_invalid_url(self):
+        """Ensure Auth raises ValidationError and
+        logs errors for invalid parameters.
+        """
+        with self.assertRaises(ValidationError):
+            Auth(
+                    base_url="invalid_url",
+                    client_key=self.client_key,
+                    client_secret=self.client_secret
+                    )
+
+    def test_invalid_url_and_key(self):
+        """Ensure Auth raises ValidationError and
+        logs errors for invalid parameters.
+        """
+        with self.assertRaises(ValidationError):
+            Auth(
+                    base_url="invalid_url",
+                    client_key="",
+                    client_secret=self.client_secret
+                    )
+
+    def test_invalid_key_and_secret(self):
+        """Ensure Auth raises ValidationError and
+        logs errors for invalid parameters.
+        """
+        with self.assertRaises(ValidationError):
+            Auth(
+                    base_url=self.base_url,
+                    client_key="",
+                    client_secret=""
+                    )
+
+    def test_invalid_secret(self):
+        """Ensure Auth raises ValidationError and
+        logs errors for invalid parameters.
+        """
+        with self.assertRaises(ValidationError):
+            Auth(
+                    base_url=self.base_url,
+                    client_key=self.client_key,
+                    client_secret=""
+                    )
+
+    def test_invalid_key(self):
+        """Ensure Auth raises ValidationError and
+        logs errors for invalid parameters.
+        """
+        with self.assertRaises(ValidationError):
+            Auth(
+                    base_url=self.base_url,
+                    client_key="",
+                    client_secret=self.client_secret
+                    )
 
 
 if __name__ == "__main__":

@@ -21,6 +21,15 @@ class ConfigModel(BaseModel):
     client_secret: str = Field(
         ..., description="Client secret for authentication")
 
+    @validator("client_key", "client_secret")
+    def validate_non_empty_string(cls, value, field):
+        """
+        Ensure that the value is not an empty string or only whitespace.
+        """
+        if not value.strip():
+            raise ValueError(f"{field.name} cannot be an empty string")
+        return value
+
 
 class TokenResponseModel(BaseModel):
     """

@@ -7,6 +7,7 @@ and retrieve access tokens.
 """
 import logging
 import base64
+from mpesa.utils.logger import get_logger
 from pydantic.v1 import ValidationError
 from mpesa.auth.models import ConfigModel, TokenResponseModel
 from mpesa.utils.client import APIClient
@@ -17,8 +18,7 @@ from mpesa.utils.exceptions import (
         InvalidAuthorizationHeaderError,
         InvalidGrantTypeError,
         )
-
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class Auth:
