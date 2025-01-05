@@ -5,8 +5,10 @@ HTTP client for interacting with APIs in the M-Pesa SDK.
 This module provides a reusable client for sending HTTP requests
 and processing responses from RESTful APIs, with robust error handling.
 """
+import asyncio
 import logging
 from typing import Dict, Any
+import httpx
 import requests
 from requests.exceptions import (
     Timeout,
@@ -31,18 +33,22 @@ class APIClient:
     """
     A client for making API requests.
 
-    This class provides methods to perform GET requests
-    to a specified base URL, and handles API responses, including
-    error codes, using custom exceptions.
+    This class provides methods to perform GET requests and
+    authentication to a specified base URL, and handles API
+    responses, including error codes, using custom exceptions.
     """
-    def __init__(self, base_url: str):
+    def __init__(self, config):
         """
-        Initialize the APIClient instance.
+        Initialize the API client with base URL and credentials.
 
         Args:
-            base_url (str): The base URL for the API.
+            config: Configuration object
         """
-        self.base_url = base_url
+        self.base_url = config.base_url
+        self.client_key = config.client_key
+        self.client_secret = config.client_secret
+        self.token = None
+        self.headers = {}
 
     def get(
             self, endpoint: str, headers: Dict[str, str],
@@ -128,3 +134,23 @@ class APIClient:
                 logger.error(f"Unknown API error: {error_data}")
                 raise APIError(f"Unknown API error: {error_data}")
         return response_data
+
+    async def authenticate(self):
+        """
+        Authenticates with the M-Pesa API and retrieves an access token.
+
+        Raises:
+            Exception: If authentication fails.
+        """
+        try:
+            auth = Auth(self.base_url, self.client_key, self.client_secret)
+            auth_response = auth.get_token()
+            self.token = auth_respose.access_token
+            self.headers = {
+                    "Authorization": f"Bear {self.token}",
+                    "Content-Type": "application/json"
+                    }
+            logger.info("Authentication successful.")
+        except Exception as e:
+            logger.error(f"Authentication failed: {e}")
+            raise
