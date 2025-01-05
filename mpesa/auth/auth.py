@@ -50,7 +50,7 @@ class Auth:
         except ValidationError as e:
             logger.error(f"Configuration validation failed: {e}")
             raise
-        self.client = APIClient(base_url=self.config.base_url)
+        self.client = APIClient(self.config)
 
     def get_token(self) -> TokenResponseModel:
         """
