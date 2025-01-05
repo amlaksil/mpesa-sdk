@@ -154,3 +154,30 @@ class APIClient:
         except Exception as e:
             logger.error(f"Authentication failed: {e}")
             raise
+
+    async def post(
+            self, endpoint: str, params: Dict[str, Any],
+            payload: Dict[str, Any], timeout: int = 10) -> Dict[str, Any]:
+        url = f"{self.base_url}{endpoint}"
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(
+                    url, headers=self.headers, params=params,
+                    json=payload, timeout=timeout
+                )
+                response.raise_for_status()
+                logger.info(f"Request to {url} successful.")
+                return response.json()
+            except httpx.RequestError as exc:
+                logger.error(
+                    f"Network error during request to {url}: {exc}")
+                return {"error": str(exc)}
+            except httpx.HTTPStatusError as exc:
+                logger.error(
+                    f"HTTP error: {exc.response.status_code} on " +
+                    "{url}: {exc.response.text}"
+                )
+                return {"error": exc.response.text}
+            except Exception as exc:
+                logger.error(f"Unexpected error during request: {exc}")
+                return {"error": str(exc)}
