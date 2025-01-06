@@ -30,6 +30,13 @@ class ConfigModel(BaseModel):
             raise ValueError(f"{field.name} cannot be an empty string")
         return value
 
+    @validator('base_url', pre=False, each_item=False)
+    def convert_base_url_to_string(cls, values):
+        """
+        Convert base_url to a string after validation.
+        """
+        return str(values)
+
 
 class TokenResponseModel(BaseModel):
     """
