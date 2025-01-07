@@ -35,18 +35,37 @@ class APIClient:
     to a specified base URL, and handles API responses, including
     error codes, using custom exceptions.
     """
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str, timeout: int = 10):
         """
         Initialize the APIClient instance.
 
         Args:
             base_url (str): The base URL for the API.
+            timeout (int, optional): The request timeout in seconds.
         """
         self.base_url = base_url
+        self.timeout = timeout
+        self.session = requests.Session()
+
+    def __enter__(self):
+        """
+        Enter the runtime context related to this object.
+
+        Returns:
+            APIClient: The APIClient instance for use in the with statement.
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """
+        Exit the runtime context and clean up resources.
+        Closes the session to release connections.
+        """
+        self.session.close()
 
     def get(
             self, endpoint: str, headers: Dict[str, str],
-            params: Dict[str, Any], timeout: int = 10) -> Dict[str, Any]:
+            params: Dict[str, Any]) -> Dict[str, Any]:
         """
         Sends a GET request to the to the specified API endpoint.
 
@@ -65,8 +84,9 @@ class APIClient:
         """
         url = f"{self.base_url}{endpoint}"
         try:
-            response = requests.get(
-                url, headers=headers, params=params, timeout=timeout)
+            response = self.session.get(
+                url, headers=headers, params=params,
+                timeout=self.timeout)
             return self._handle_response(response)
         except Timeout:
             logger.error(f"Request timed out for URL: {url}")
@@ -125,6 +145,6 @@ class APIClient:
             elif result_code == "999998":
                 raise InvalidGrantTypeError(error_message)
             else:
-                logger.error(f"Unknown API error: {error_data}")
-                raise APIError(f"Unknown API error: {error_data}")
+                logger.error(f"Unknown API error: {error_message}")
+                raise APIError(f"Unknown API error: {error_message}")
         return response_data
