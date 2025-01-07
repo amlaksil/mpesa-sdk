@@ -148,3 +148,42 @@ class APIClient:
                 logger.error(f"Unknown API error: {error_message}")
                 raise APIError(f"Unknown API error: {error_message}")
         return response_data
+
+    def post(self, endpoint: str, headers: Dict[str, str],
+             data: Dict[str, str],
+             params: Dict[str, str] = {}) -> Dict[str, Any]:
+        """
+        Sends a POST request to the specified API endpoint.
+
+        Args:
+            endpoint (str): The API endpoint to query.
+            headers (Dict[str, str]): HTTP headers to include in the
+        request.
+            data (Any): The request payload.
+
+        Returns:
+            Dict[str, Any]: Parsed JSON response from the API.
+
+        Raises:
+            APIError: For network issues, timeouts, or unexpected
+        errors.
+        """
+        url = f"{self.base_url}{endpoint}"
+        try:
+            response = self.session.post(
+                url, headers=headers, params=params,
+                json=data, timeout=self.timeout
+            )
+            return self._handle_response(response)
+        except Timeout:
+            logger.error(f"Request timed out for URL: {url}")
+            raise APIError("The request timed out. Please try again later.")
+        except ConnectionError as e:
+            logger.error(
+                f"Connection error for the URL: {url} - {str(e)}")
+            raise APIError(
+                "A network error occurred. Please check your connection.")
+        except RequestException as e:
+            logger.error(
+                f"Unexpected error for URL: {url} - {str(e)}")
+            raise APIError("An unexpected error occurred. Please try again.")
