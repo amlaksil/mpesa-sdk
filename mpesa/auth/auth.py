@@ -12,12 +12,12 @@ from pydantic.v1 import ValidationError
 from mpesa.auth.models import ConfigModel, TokenResponseModel
 from mpesa.utils.client import APIClient
 from mpesa.utils.exceptions import (
-        APIError,
-        InvalidClientIDError,
-        InvalidAuthenticationError,
-        InvalidAuthorizationHeaderError,
-        InvalidGrantTypeError,
+        APIError, AuthenticationError,
+        TimeoutError, NetworkError, HTTPError,
+        TooManyRedirects
         )
+from mpesa.utils.error_handler import handle_error
+
 logger = get_logger(__name__)
 
 
@@ -48,8 +48,8 @@ class Auth:
                     client_secret=client_secret
                     )
         except ValidationError as e:
-            logger.error(f"Configuration validation failed: {e}")
-            raise
+            handle_error(
+                f"Configuration validation failed: {str(e)}", __name__)
         self.client = APIClient(base_url=self.config.base_url)
 
     def get_token(self) -> TokenResponseModel:
@@ -80,26 +80,7 @@ class Auth:
             validated_response = TokenResponseModel(**token_response)
             logger.info("Access token successfully retrieved.")
             return validated_response
-        except (InvalidClientIDError,
-                InvalidAuthenticationError,
-                InvalidAuthorizationHeaderError,
-                InvalidGrantTypeError,
-                APIError) as e:
-            self.handle_error(e, logger)
-        except ValidationError as e:
-            logger.error(f"Token response validation failed: {e}")
-            raise
-        except Exception as e:
-            logger.critical(f"Unexpected error occurred: {e}", exc_info=True)
-            raise
-
-    def handle_error(self, error: Exception, logger: logging.Logger) -> None:
-        """
-        A helper method to log error messages and their mitigation.
-        Args:
-            error: The caught exception.
-            logger: The logger instance used for logging messages.
-        """
-        logger.error(f"{error.__class__.__name__}: {error}")
-        if getattr(error, 'mitigation', None):
-            logger.info(f"Mitigation: {error.mitigation}")
+        except (APIError, AuthenticationError,
+                TimeoutError, NetworkError, HTTPError,
+                TooManyRedirects, ValidationError) as e:
+            handle_error(f"{str(e)}", __name__)
