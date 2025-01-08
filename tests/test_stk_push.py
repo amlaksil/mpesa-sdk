@@ -63,6 +63,32 @@ class TestSTKPush(unittest.TestCase):
         with self.assertRaises(ValidationError):
             self.stk_push.send_stk_push(invalid_payload)
 
+    @patch.object(APIClient, 'post')
+    def test_send_stk_push_api_error(self, mock_post):
+        """Test API error handling in STK push request."""
+        mock_post.side_effect = Exception("APIError")
+
+        data = self.payload
+        data['Password'] = 'Not_encoded_password'
+
+        with self.assertRaises(Exception) as context:
+            self.stk_push.send_stk_push(data)
+
+        self.assertEqual(str(context.exception), "APIError")
+
+    def test_create_payload_successful(self):
+        """Test payload creation with valid data."""
+        del self.payload['Password']
+        del self.payload['Timestamp']
+        new_payload = self.stk_push.create_payload(
+            short_code=self.short_code,
+            pass_key=self.pass_key,
+            **self.payload
+        )
+
+        self.assertIn("Password", new_payload)
+        self.assertIn("Timestamp", new_payload)
+
 
 if __name__ == "__main__":
     unittest.main()
