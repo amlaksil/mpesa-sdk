@@ -55,6 +55,14 @@ class TestSTKPush(unittest.TestCase):
         self.assertEqual(response["CustomerMessage"], msg)
         mock_post.assert_called_once()
 
+    def test_send_stk_push_validation_error(self):
+        """Test STK push with invalid payload."""
+        invalid_payload = self.payload
+        del invalid_payload['PhoneNumber']
+
+        with self.assertRaises(ValidationError):
+            self.stk_push.send_stk_push(invalid_payload)
+
 
 if __name__ == "__main__":
     unittest.main()
