@@ -1,4 +1,9 @@
 #!/usr/bin/python3
+"""
+This module provides functionality to initiate and manage M-PESA STK Push
+payment requests, including payload creation, validation, and
+API communication.
+"""
 import base64
 from datetime import datetime
 from typing import Dict, Any
@@ -18,7 +23,12 @@ logger = get_logger(__name__)
 
 class STKPush:
     """
-    STKPush handles M-PESA STK push payment initiation.
+    Handles M-PESA STK Push payment initiation.
+
+    This class provides methods to facilitate communication with the M-PESA
+    STK Push API, enabling businesses to send payment requests directly to
+    customers' phones for quick and secure transactions. It supports payload
+    creation, validation, and API communication.
     """
     def __init__(
             self, base_url: str, access_token: str,
@@ -84,3 +94,40 @@ class STKPush:
                 TimeoutError, NetworkError, HTTPError,
                 TooManyRedirects, ValidationError) as e:
             self.client.handle_exception(type(e), e, __name__)
+
+    def create_payload(
+            self, short_code: str, pass_key: str, **kwargs) -> Dict[str, Any]:
+        """
+        Creates a payload for the STK Push request.
+
+        This method generates a timestamp and an encoded password using the
+        provided shortcode and passkey. It validates the payload using the
+        `STKPushPayload` model before returning it.
+
+        Args:
+            short_code (str): The shortcode used for the transaction.
+            pass_key (str): The passkey associated with the transaction.
+            **kwargs: Additional payment details required by the STK Push API.
+
+        Returns:
+            dict: The validated payload ready for use in an STK Push request.
+
+        Raises:
+            ValidationError: If the payload fails validation.
+        """
+        timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+        logger.debug("Generated Timestamp: %s", timestamp)
+
+        raw_password = f"{short_code}{pass_key}{timestamp}"
+        encoded_password = base64.b64encode(raw_password.encode()).decode()
+        logger.debug("Encoded Password generated.")
+
+        kwargs['Password'] = encoded_password
+        kwargs['Timestamp'] = timestamp
+
+        try:
+            payload = STKPushPayload(**kwargs)
+            logger.info("Payload created and validated successfully.")
+            return payload.model_dump()
+        except ValidationError as e:
+            self.handle_exception(type(e), e, __name__)
