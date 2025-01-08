@@ -1,3 +1,6 @@
+from pydantic import ValidationError as ValError
+
+
 class APIError(Exception):
     """Base class for all API errors."""
     def __init__(self, message, mitigation=None):
@@ -51,13 +54,33 @@ class AuthenticationError(APIError):
     def __init__(self, result_code, result_description):
         mitigation = self.error_mapping.get(
             result_code, "Check your authentication details and retry.")
-        message = f"Authentication Error - Code: {result_code}, " +
-        "Description: {result_description}"
+        message = f"Authentication Error - Code: {result_code}, " + \
+            "Description: {result_description}"
         super().__init__(message, mitigation)
 
 
 class ValidationError(APIError):
-    """Error for data validation failures."""
-    def __init__(self, message="Data validation error occurred."):
+    """Error for handling Pydantic validation errors."""
+    def __init__(self, validation_error: ValError):
+        error_messages = self.format_errors(validation_error)
         super().__init__(
-            message, "Ensure the data structure is correct.")
+            "Data validation error occurred.",
+            "Ensure the provided data meets the required schema."
+        )
+        self.validation_error = validation_error
+        self.error_details = error_messages
+
+    @staticmethod
+    def format_errors(validation_error):
+        """Formats the validation error details."""
+        error_messages = []
+        for error in validation_error.errors():
+            loc = ".".join(map(str, error['loc']))
+            msg = error['msg']
+            error_messages.append(f"Field: {loc} | Issue: {msg}")
+        return error_messages
+
+    def __str__(self):
+        """String representation with all error details."""
+        formatted_errors = "\n".join(self.error_details)
+        return f"{super().__str__()}\nDetails:\n{formatted_errors}"

@@ -6,13 +6,13 @@ This module provides a reusable client for sending HTTP requests
 and processing responses from RESTful APIs, with robust error handling.
 """
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Type
 import requests
 from requests.exceptions import (
     Timeout,
-    HTTPError,
+    HTTPError as http,
     ConnectionError,
-    TooManyRedirects,
+    TooManyRedirects as many,
     RequestException
     )
 from mpesa.config import Config
@@ -20,7 +20,7 @@ from mpesa.utils.logger import get_logger
 from mpesa.utils.exceptions import (
         APIError, AuthenticationError,
         TimeoutError, NetworkError, HTTPError,
-        TooManyRedirects
+        TooManyRedirects, ValidationError
         )
 from mpesa.utils.error_handler import handle_error
 
@@ -83,21 +83,16 @@ class APIClient:
             APIError: For network issues, timeouts, or unexpected errors.
         """
         url = f"{self.base_url}{endpoint}"
-        module = __name__
         try:
             response = self.session.get(
                 url, headers=headers, params=params,
                 timeout=self.timeout)
             response.raise_for_status()
             return self._handle_get_response(response)
-        except (Timeout, ConnectionError) as e:
-            handle_error(NetworkError(str(e)), module)
-        except HTTPError as e:
-            handle_error(HTTPError(str(e)), module)
-        except TooManyRedirects as e:
-            handle_error(TooManyRedirects(str(e)), module)
-        except RequestException as e:
-            handle_error(APIError(f"Unexpected error: {str(e)}"), module)
+        except (APIError, AuthenticationError,
+                TimeoutError, NetworkError, http,
+                many, ValidationError) as e:
+            self.handle_exception(type(e), e, __name__)
 
     def _handle_get_response(
             self, response: requests.Response) -> Dict[str, Any]:
@@ -113,7 +108,7 @@ class APIClient:
         try:
             response_data = response.json()
         except ValueError as e:
-            handle_error(APIError(f"{str(e)}"))
+            handle_error(APIError(e))
 
         if "resultCode" in response_data:
             result_code = response_data.get("resultCode")
@@ -139,7 +134,6 @@ class APIClient:
             Dict[str, Any]: Parsed JSON response from the API.
         """
         url = f"{self.base_url}{endpoint}"
-        module = __name__
         try:
             response = self.session.post(
                     url, headers=headers, params=params,
@@ -147,12 +141,21 @@ class APIClient:
                     )
             response.raise_for_status()
             return response.json()
-        except (Timeout, ConnectionError) as e:
-            handle_error(NetworkError(str(e)), module)
-        except HTTPError as e:
-            handle_error(HTTPError(str(e)), module)
-        except TooManyRedirects as e:
-            handle_error(TooManyRedirects(str(e)), module)
-        except RequestException as e:
-            handle_error(
-                APIError(f"Unexpected error: {str(e)}"), module)
+        except (APIError, AuthenticationError,
+                TimeoutError, NetworkError, HTTPError,
+                TooManyRedirects, ValidationError) as e:
+            self.handle_exception(type(e), e, __name__)
+
+    def handle_exception(
+            self, exc_type: Type[Exception], e: Exception,
+            module: str) -> None:
+        """
+        Handles exceptions by passing the exception to the
+        handle_error function.
+
+        Args:
+            exc_type (Type[Exception]): The type of the exception.
+            e (Exception): The exception instance that was caught.
+            module (str): The name of the module where the exception occurred.
+        """
+        handle_error(exc_type(str(e)), module)

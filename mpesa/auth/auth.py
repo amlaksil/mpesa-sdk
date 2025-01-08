@@ -8,13 +8,12 @@ and retrieve access tokens.
 import logging
 import base64
 from mpesa.utils.logger import get_logger
-from pydantic.v1 import ValidationError
 from mpesa.auth.models import ConfigModel, TokenResponseModel
 from mpesa.utils.client import APIClient
 from mpesa.utils.exceptions import (
         APIError, AuthenticationError,
         TimeoutError, NetworkError, HTTPError,
-        TooManyRedirects
+        TooManyRedirects, ValidationError
         )
 from mpesa.utils.error_handler import handle_error
 
@@ -48,8 +47,7 @@ class Auth:
                     client_secret=client_secret
                     )
         except ValidationError as e:
-            handle_error(
-                f"Configuration validation failed: {str(e)}", __name__)
+            handle_error(ValidationError(e), __name__)
         self.client = APIClient(base_url=self.config.base_url)
 
     def get_token(self) -> TokenResponseModel:
@@ -83,4 +81,4 @@ class Auth:
         except (APIError, AuthenticationError,
                 TimeoutError, NetworkError, HTTPError,
                 TooManyRedirects, ValidationError) as e:
-            handle_error(f"{str(e)}", __name__)
+            self.client.handle_exception(type(e), e, __name__)
