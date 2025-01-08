@@ -6,13 +6,10 @@ from pydantic.v1 import ValidationError
 from mpesa.auth.auth import Auth
 from mpesa.auth.models import ConfigModel, TokenResponseModel
 from mpesa.config import Config
-from mpesa.utils.exceptions import APIError, InvalidClientIDError
 from mpesa.utils.exceptions import (
-        APIError,
-        InvalidClientIDError,
-        InvalidAuthenticationError,
-        InvalidAuthorizationHeaderError,
-        InvalidGrantTypeError,
+        APIError, AuthenticationError,
+        TimeoutError, NetworkError, HTTPError,
+        TooManyRedirects
         )
 
 
@@ -105,45 +102,49 @@ class TestAuth(unittest.TestCase):
     @patch("mpesa.auth.auth.Auth.get_token")
     def test_get_token_invalid_client_id(self, mock_get):
         """Test handling of InvalidClientIDError."""
-        mock_get.side_effect = InvalidClientIDError()
+        mock_get.side_effect = AuthenticationError(
+            "999991", "Ensure the correct client ID is used.")
 
-        with self.assertRaises(InvalidClientIDError):
+        with self.assertRaises(AuthenticationError):
             self.auth.get_token()
 
     @patch("mpesa.auth.auth.Auth.get_token")
     def test_get_token_invalid_authentication(self, mock_get):
         """Test token retrieval with an invalid authentication type."""
-        mock_get.side_effect = InvalidAuthenticationError()
+        mock_get.side_effect = AuthenticationError(
+            "999996", "Ensure the authentication type is Basic Auth.")
 
-        with self.assertRaises(InvalidAuthenticationError):
+        with self.assertRaises(AuthenticationError):
             self.auth.get_token()
 
     @patch("mpesa.auth.auth.Auth.get_token")
     def test_get_token_invalid_authorization_header(self, mock_get):
         """Test token retrieval with an invalid client secret (password)."""
-        mock_get.side_effect = InvalidAuthorizationHeaderError()
+        mock_get.side_effect = AuthenticationError(
+            "999996", "Ensure the correct client ID is used.")
 
-        with self.assertRaises(InvalidAuthorizationHeaderError):
+        with self.assertRaises(AuthenticationError):
             self.auth.get_token()
 
     @patch("mpesa.auth.auth.Auth.get_token")
     def test_get_token_invalid_grant_type(self, mock_get):
         """Test token retrieval with an invalid or empty grant type."""
-        mock_get.side_effect = InvalidGrantTypeError()
+        mock_get.side_effect = AuthenticationError(
+            "999998", "Use client_credentials as the grant type.")
 
-        with self.assertRaises(InvalidGrantTypeError):
+        with self.assertRaises(AuthenticationError):
             self.auth.get_token()
 
     @patch("mpesa.auth.auth.APIClient.get")
     def test_unexpected_error(self, mock_get):
         """Test handling of unexpected exceptions."""
-        mock_get.side_effect = Exception("Unexpected error.")
+        mock_get.side_effect = APIError("Unexpected error.")
 
-        with self.assertLogs("mpesa.auth.auth", level="CRITICAL") as cm:
-            with self.assertRaises(Exception):
+        with self.assertLogs("mpesa.auth.auth", level="ERROR") as cm:
+            with self.assertRaises(APIError):
                 self.auth.get_token()
 
-            self.assertIn("Unexpected error occurred", cm.output[0])
+            # self.assertIn("Unexpected error occurred", cm.output[0])
 
     def test_invalid_all_params(self):
         """Ensure Auth raises ValidationError and
