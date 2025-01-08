@@ -100,3 +100,42 @@ class STKPushPayload(BaseModel):
         Convert CallBackURL to a string after validation.
         """
         return str(value)
+
+
+class RegisterURLRequest(BaseModel):
+    """
+    Represents a request payload for registering M-PESA validation
+    and confirmation URLs.
+    """
+    ShortCode: str = Field(
+        ..., pattern=r'^\d{6,}$',
+        description="A unique numeric identifier tagged to an M-PESA " +
+        "pay bill/till number.")
+    ResponseType: str = Field(
+        ..., pattern=r'^(Completed|Cancelled)$',
+        description="Specifies action if validation URL is unreachable. " +
+        "Use 'Completed' or 'Cancelled'.")
+    CommandID: str = Field(
+        ..., pattern=r'^RegisterURL$',
+        description="Differentiates the service from others. " +
+        "Must be 'RegisterURL'.")
+    ConfirmationURL: HttpUrl = Field(
+        ..., description="URL to receive confirmation request upon " +
+        "payment completion.")
+    ValidationURL: HttpUrl = Field(
+        ..., description="URL to receive validation request upon " +
+        "payment submission.")
+
+    @validator('ConfirmationURL', pre=False, always=True)
+    def convert_confirmation_url_to_string(cls, value):
+        """
+        Convert ConfirmationURL to a string after validation.
+        """
+        return str(value)
+
+    @validator('ValidationURL', pre=False, always=True)
+    def convert_validation_url_to_string(cls, value):
+        """
+        Convert ValidationURL to a string after validation.
+        """
+        return str(value)
