@@ -52,21 +52,25 @@ class TestAuth(unittest.TestCase):
         mock_response = {
             "access_token": "test_access_token",
             "token_type": "Bearer",
-            "expires_in": 3600
+            "expires_in": 3600,
+            "valid_for": "1 hour"
         }
         mock_get.return_value = mock_response
 
+        """
         with patch(
                 'mpesa.auth.auth.TokenResponseModel'
         ) as MockTokenResponseModel:
             MockTokenResponseModel.return_value = TokenResponseModel(
                 **mock_response)
+        """
 
-            token = self.auth.get_token()
+        token = self.auth.get_token()
 
-            self.assertEqual(token.access_token, "test_access_token")
-            self.assertEqual(token.token_type, "Bearer")
-            self.assertEqual(token.expires_in, 3600)
+        self.assertEqual(token["access_token"], "test_access_token")
+        self.assertEqual(token["token_type"], "Bearer")
+        self.assertEqual(token["expires_in"], 3600)
+        self.assertEqual(token["valid_for"], "1 hour")
 
     @patch('mpesa.auth.auth.APIClient.get')
     def test_get_token_validation_error(self, mock_get):
@@ -74,7 +78,8 @@ class TestAuth(unittest.TestCase):
         mock_get.return_value = {
             "access_token": None,
             "token_type": "Bearer",
-            "expires_in": "invalid"
+            "expires_in": "invalid",
+            "valid_for": "1 hour"
         }
         with self.assertRaises(Exception):
             with self.assertLogs(level='WARNING') as log:
