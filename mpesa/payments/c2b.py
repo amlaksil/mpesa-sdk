@@ -1,6 +1,19 @@
 #!/usr/bin/python3
+"""
+M-Pesa Customer-to-Business (C2B) Module
+
+This module provides a Python SDK for integrating with M-Pesa's
+Customer-to-Business (C2B) APIs, enabling businesses to facilitate
+mobile payment transactions securely and efficiently.
+
+Features:
+- Registering validation and confirmation URLs to handle transaction
+  notifications.
+- Initiating payment requests from customers to businesses.
+"""
 from typing import Dict, Any
-from mpesa.payments.models import RegisterURLRequest
+from mpesa.config import Config
+from mpesa.payments.models import RegisterURLRequest, PaymentRequest
 from mpesa.utils.client import APIClient
 from mpesa.utils.logger import get_logger
 from mpesa.utils.exceptions import (
@@ -13,8 +26,9 @@ logger = get_logger(__name__)
 
 class C2B:
     """
-    This class provides functionality for M-Pesa Customer-to-Business (C2B)
-    integrations.
+    Provides methods for integrating with the M-Pesa C2B API. It supports the
+    registration of URLs for handling validation and confirmation notifications
+    and initiating payment requests for customer-to-business transactions.
     """
     def __init__(self, base_url: str, client: APIClient = None):
         """
@@ -53,7 +67,7 @@ class C2B:
             TooManyRedirects: If too many redirects occur.
             ValidationError: If the provided payload fails schema validation.
         """
-        endpoint = "/v1/c2b-register-url/register"
+        endpoint = Config.C2B_REGISTER_URL_ENDPOINT
         params = {"apikey": username}
         try:
             validated_payload = RegisterURLRequest(**payload).model_dump()
@@ -67,4 +81,38 @@ class C2B:
                 TooManyRedirects, ValidationError) as e:
             logger.error(
                 f"Failed to register C2B URLs due to {str(e)}.")
+            self.client.handle_exception(type(e), e, __name__)
+
+    def make_payment(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Processes a customer-initiated payment through the M-Pesa API.
+
+        Args:
+            payload (Dict[str, Any]): A dictionary containing the payment
+        request payload data.
+
+        Returns:
+            Dict[str, Any]: The response from the M-Pesa API.
+
+        Raises:
+            APIError: If the API returns a general error.
+            AuthenticationError: If authentication fails.
+            TimeoutError: If the request times out.
+            NetworkError: If there is a network issue.
+            HTTPError: If the server returns an HTTP error.
+            TooManyRedirects: If too many redirects occur.
+            ValidationError: If the provided payload fails schema validation.
+        """
+        endpoint = Config.C2B_PAYMENTS_ENDPOINT
+        try:
+            validated_payload = PaymentRequest(**payload).model_dump()
+            response = self.client.post(
+                endpoint, data=validated_payload
+            )
+            logger.info("Payment processed successfully.")
+            return response
+        except (APIError, AuthenticationError,
+                TimeoutError, NetworkError, HTTPError,
+                TooManyRedirects, ValidationError) as e:
+            logger.error(f"Failed to process payment due to {str(e)}.")
             self.client.handle_exception(type(e), e, __name__)
