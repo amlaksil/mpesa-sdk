@@ -1,109 +1,280 @@
-# `Auth` Module Documentation
+# M-Pesa Python SDK
 
-The `Auth` module in the M-Pesa SDK handles authentication by retrieving access tokens from the M-Pesa API. This module is designed to simplify the process of authenticating API requests by managing the token lifecycle and handling errors gracefully.
+## Overview
 
----
+The M-Pesa Python SDK simplifies the integration of your Python applications with the M-Pesa API, enabling seamless access to mobile money services such as payments, payouts, and transaction management. This SDK is designed to accelerate your development by providing a robust interface for M-Pesa’s STK Push, C2B, B2C, and authentication APIs.
 
-## Table of Contents
+## Features
 
-1. [Installation](#installation)
-2. [Prerequisites](#prerequisites)
-3. [Usage](#usage)
-4. [Error Handling](#error-handling)
-5. [Testing](#testing)
-6. [License](#license)
+- **Authentication**: Retrieve OAuth2 access tokens.
+- **STK Push**: Initiate mobile money payments from customers.
+- **Customer to Business (C2B)**: Process customer payments with validation and confirmation callbacks.
+- **Business to Customer (B2C)**: Payouts for salaries, rewards, or refunds.
+- **Error Handling**: Comprehensive exception management.
+- **Logging**: Built-in logging for debugging and monitoring.
 
----
+## Requirements
+- Python 3.7 or higher
+- An M-Pesa API developer account
+- Consumer Key and Consumer Secret from the M-Pesa API portal
+- Publicly accessible callback URLs (for C2B and B2C)
 
 ## Installation
 
-Ensure you have Python 3.7+ installed. Then, install the required dependencies:
+Install the SDK using pip:
 
 ```bash
-pip install -r requirements.txt
+pip install mpesa
 ```
 
----
+## Configuration Guide
 
-## Prerequisites
+### Option 1: Using Environment Variables
 
-Before using the `Auth` module, ensure the following:
-1. **M-Pesa API Base URL**: Obtain the base URL for the API (e.g., sandbox or production).
-2. **API Credentials**: 
-   - `client_key`: Your API key (username) provided by M-Pesa.
-   - `client_secret`: Your API secret (password) provided by M-Pesa.
+This is the recommended approach to keep your credentials and configuration secure and centralized.
 
----
+1. **Create a `.env` File**
+
+Place a `.env` file in your project root with the following content:
+
+```dotenv
+# API Base URL and Endpoints
+BASE_URL=https://sandbox.safaricom.et
+TOKEN_GENERATE_ENDPOINT=/v1/token/generate
+STK_PUSH_ENDPOINT=/mpesa/stkpush/v1/processrequest
+C2B_REGISTER_URL_ENDPOINT=/mpesa/c2b/v1/registerurl
+C2B_PAYMENTS_ENDPOINT=/mpesa/c2b/v1/simulate
+B2C_PAYMENT_REQUEST_ENDPOINT=/mpesa/b2c/v1/paymentrequest
+
+# Authentication
+CLIENT_KEY=your_client_key
+CLIENT_SECRET=your_client_secret
+
+# Logging and Environment
+TIMEOUT=30
+MPESA_LOG_DIR=./logs
+LOG_LEVEL=DEBUG
+ENVIRONMENT=DEV  # Set to TEST to disable console logging
+```
+
+2. **Access Configuration in Code**
+
+The SDK automatically loads these variables using the `dotenv` package:
+
+```python
+from mpesa import Config
+
+# Access configuration
+print("Base URL:", Config.BASE_URL)
+print("Client Key:", Config.CLIENT_KEY)
+```
+
+### Option 2: Overriding Configuration Directly
+
+If you don’t want to use environment variables or need to change settings dynamically, you can override the configuration directly in your application.
+
+#### Example:
+
+```python
+# Override configuration
+Config.BASE_URL = "https://production.safaricom.et"
+Config.CLIENT_KEY = "your_production_client_key"
+Config.CLIENT_SECRET = "your_production_client_secret"
+Config.ENVIRONMENT = "TEST"  # Disable console logs in production
+
+print("Base URL:", Config.BASE_URL)
+```
+
+### Handling Changes in Endpoints
+
+If M-Pesa updates its endpoints or you need to switch between environments (sandbox/production), you can easily update the relevant endpoints:
+
+#### Example:
+
+```python
+# Set custom endpoint
+Config.STK_PUSH_ENDPOINT = "/custom/stkpush/v1/processrequest"
+print("Updated STK Push Endpoint:", Config.STK_PUSH_ENDPOINT)
+```
 
 ## Usage
 
-Here’s how to use the `Auth` module:
+### Step 1: Authentication
 
-### 1. Import the Module
-```python
-from mpesa.auth.auth import Auth
-```
-
-### 2. Initialize the `Auth` Instance
-```python
-base_url = "https://sandbox.safaricom.et"  # Replace with the production URL for live environments
-client_key = "YOUR_CLIENT_KEY"
-client_secret = "YOUR_CLIENT_SECRET"
-
-auth_instance = Auth(base_url=base_url, client_key=client_key, client_secret=client_secret)
-```
-
-### 3. Retrieve an Access Token
-Use the `get_token` method to fetch a valid token.
+Authenticate with the M-Pesa API to retrieve the access token.
 
 ```python
-try:
-    token_response = auth_instance.get_token()
-    print(f"Access Token: {token_response.access_token}")
-    print(f"Expires In: {token_response.expires_in} seconds")
-except Exception as e:
-    print(f"Error: {str(e)}")
+from mpesa import Auth
+
+auth = Auth(
+    consumer_key="your_consumer_key",
+    consumer_secret="your_consumer_secret",
+    base_url="https://sandbox.safaricom.et"
+)
+
+response = auth.get_access_token()
+print("Access Token:", response.get("access_token"))
 ```
 
----
+### Step 2: STK Push Integration
+
+Send an STK Push request to initiate a payment from a customer.
+
+```python
+from mpesa import STKPush
+
+stk_push = STKPush(
+    base_url="https://sandbox.safaricom.et",
+    access_token=access_token
+)
+
+payload = stk_push.create_payload(
+    short_code="174379",
+    pass_key="your_pass_key",
+    BusinessShortCode="174379",
+    Amount="1000",
+    PartyA="254712345678",
+    PartyB="174379",
+    PhoneNumber="254712345678",
+    CallBackURL="https://example.com/callback",
+    AccountReference="INV123456",
+    TransactionDesc="Payment for Invoice #123456"
+)
+
+response = stk_push.send_stk_push(payload)
+print("STK Push Response:", response)
+```
+
+### Step 3: C2B Payment
+
+Register URLs and process customer payments.
+
+```python
+from mpesa import C2B
+
+c2b = C2B(base_url="https://sandbox.safaricom.et", access_token=access_token)
+
+# Register validation and confirmation URLs
+registration_response = c2b.register_url(payload={
+    "ShortCode": "123456",
+    "ResponseType": "Completed",
+    "CommandID": "RegisterURL",
+    "ConfirmationURL": "https://example.com/confirmation",
+    "ValidationURL": "https://example.com/validation"
+})
+
+# Process a payment
+payment_response = c2b.make_payment(payload={
+    "ShortCode": "123456",
+    "CommandID": "CustomerPayBillOnline",
+    "Amount": "500",
+    "Msisdn": "254700000000",
+    "BillRefNumber": "INV12345"
+})
+
+print("Payment Response:", payment_response)
+```
+
+### Step 4: B2C Payout
+
+Send payments to customers.
+
+```python
+from mpesa import B2C
+
+b2c = B2C(
+    base_url="https://api.safaricom.et",
+    access_token=access_token
+)
+
+payload = {
+    "amount": 5000,
+    "partyA": "600000",
+    "partyB": "254712345678",
+    "remarks": "Loan Disbursement",
+    "queueTimeoutURL": "https://yourcallback.url/timeout",
+    "resultURL": "https://yourcallback.url/result"
+}
+
+response = b2c.make_payment(payload)
+print(response)
+```
+
+## Logging Guide
+
+The SDK includes a flexible logging system to capture debug and runtime information. 
+
+### Default Behavior
+
+- Logs are saved to the directory specified by `MPESA_LOG_DIR` (e.g., `./logs`).
+- Logs are displayed in the terminal (unless `ENVIRONMENT` is set to `TEST`).
+
+### Customizing Logging
+
+1. **Environment Variables**
+
+Control logging behavior via your `.env` file:
+
+```dotenv
+MPESA_LOG_DIR=./custom_logs
+LOG_LEVEL=INFO
+ENVIRONMENT=TEST  # Disable console logs
+```
+
+2. **Disable Console Logs Programmatically**
+
+You can also set the environment programmatically to `TEST`:
+
+```python
+from mpesa.config import Config
+
+Config.ENVIRONMENT = "TEST"  # Disables console logging
+```
+
+3. **Using the Logger**
+
+Set up and use a logger in your application:
+
+```python
+from mpesa import get_logger
+
+# Initialize logger
+logger = get_logger(__name__)
+
+# Log messages
+logger.info("Starting the M-Pesa payment process.")
+logger.debug("Debugging transaction payload.")
+```
 
 ## Error Handling
 
-The `Auth` module raises specific exceptions for various error scenarios:
+The SDK includes custom exceptions for better debugging:
 
-- **`InvalidClientIDError`**: Raised when the `client_key` is invalid.
-- **`InvalidAuthenticationError`**: Raised when the authentication type is not `Basic Auth`.
-- **`InvalidAuthorizationHeaderError`**: Raised when the `client_secret` is invalid.
-- **`APIError`**: Raised for generic API issues, such as network errors or unexpected responses.
+- **ValidationError**: Raised for invalid payloads.
+- **APIError**: Raised for API-level errors.
 
-### Example:
+Example:
+
 ```python
+from mpesa import APIError, ValidationError
+
 try:
-    token_response = auth_instance.get_token()
-except InvalidClientIDError:
-    print("Error: The client key is invalid.")
-except InvalidAuthenticationError:
-    print("Error: Invalid authentication type. Expected Basic Auth.")
-except InvalidAuthorizationHeaderError:
-    print("Error: Invalid client secret.")
+    response = stk_push.send_stk_push(payload)
+except ValidationError as e:
+    print("Payload validation failed:", e)
 except APIError as e:
-    print(f"API Error: {str(e)}")
+    print("API error occurred:", e)
+except Exception as e:
+    print("An unexpected error occurred:", e)
 ```
+
+## Contributing
+
+Contributions are welcome! If you’d like to improve the SDK, feel free to fork the repository and submit a pull request.
+
+## License
+
+This project is licensed under the [MIT License](https://mit-license.org/amlaksil). See the [LICENSE](LICENSE) file for more details.
 
 ---
-
-## Testing
-
-The `Auth` module includes unit tests to ensure its functionality. To run the tests:
-
-1. Ensure you have `unittest` installed (it comes with Python by default).
-2. Run the tests:
-
-```bash
-python3 -m unittest discover tests
-```
-
-Tests cover:
-- Successful token retrieval.
-- Handling of invalid `client_key` or `client_secret`.
-- Errors such as invalid authentication type or authorization header.
+*Happy coding with M-Pesa Python SDK!*
