@@ -54,7 +54,7 @@ class C2B:
             ValidationError: If the provided payload fails schema validation.
         """
         endpoint = "/v1/c2b-register-url/register"
-        params = {f"apikey={username}"}
+        params = {"apikey": username}
         try:
             validated_payload = RegisterURLRequest(**payload).model_dump()
             response = self.client.post(
@@ -66,5 +66,5 @@ class C2B:
                 TimeoutError, NetworkError, HTTPError,
                 TooManyRedirects, ValidationError) as e:
             logger.error(
-                f"Failed to register C2B URLs due to {type(e).__name__}.")
+                f"Failed to register C2B URLs due to {str(e)}.")
             self.client.handle_exception(type(e), e, __name__)
