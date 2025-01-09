@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Dict, Any
 from pydantic import BaseModel, ValidationError
 from mpesa.auth.auth import Auth
+from mpesa.config import Config
 from mpesa.payments.models import STKPushPayload
 from mpesa.utils.logger import get_logger
 from mpesa.utils.client import APIClient
@@ -83,7 +84,7 @@ class STKPush:
         except ValidationError as e:
             self.client.handle_exception(type(e), e, __name__)
 
-        endpoint = "/mpesa/stkpush/v3/processrequest"
+        endpoint = Config.STK_PUSH_ENDPOINT
         try:
             response = self.client.post(
                     endpoint, headers=self.headers, data=validated_payload)
