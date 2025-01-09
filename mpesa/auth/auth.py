@@ -2,11 +2,13 @@
 """
 Authentication module for the M-Pesa SDK.
 
-Provides functionality to authenticate with the M-Pesa API
-and retrieve access tokens.
+This module handles the authentication process required to interact with
+the M-Pesa API. It is responsible for obtaining an access token that is
+required for authenticating subsequent API requests.
 """
 import logging
 import base64
+from mpesa.config import Config
 from mpesa.utils.logger import get_logger
 from mpesa.auth.models import ConfigModel, TokenResponseModel
 from mpesa.utils.client import APIClient
@@ -67,7 +69,7 @@ class Auth:
         encoded_credentials = base64.b64encode(auth_string.encode()).decode()
         headers = {"Authorization": f"Basic {encoded_credentials}"}
         params = {"grant_type": "client_credentials"}
-        endpoint = "/v1/token/generate"
+        endpoint = Config.TOKEN_GENERATE_ENDPOINT
 
         try:
             token_response = self.client.get(

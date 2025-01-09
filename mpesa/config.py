@@ -13,7 +13,19 @@ class Config:
     for the application.
     """
     load_dotenv()
-    BASE_URL = getenv('BASE_URL')
+
+    BASE_URL = getenv("BASE_URL", "https://apisandbox.safaricom.et")
+    TOKEN_GENERATE_ENDPOINT = getenv(
+        "TOKEN_GENERATE_ENDPOINT", "/v1/token/generate")
+    STK_PUSH_ENDPOINT = getenv(
+        "STK_PUSH_ENDPOINT", "/mpesa/stkpush/v3/processrequest")
+    C2B_REGISTER_URL_ENDPOINT = getenv(
+        "C2B_REGISTER_URL_ENDPOINT", "/v1/c2b-register-url/register")
+    C2B_PAYMENTS_ENDPOINT = getenv(
+        "C2B_PAYMENTS_ENDPOINT", "/v1/c2b/payments")
+    B2C_PAYMENT_REQUEST_ENDPOINT = getenv(
+        "B2C_PAYMENT_REQUEST_ENDPOINT", "/mpesa/b2c/v1/paymentrequest")
+
     CLIENT_KEY = getenv('CLIENT_KEY')
     CLIENT_SECRET = getenv('CLIENT_SECRET')
     TIMEOUT = getenv('TIMEOUT')
