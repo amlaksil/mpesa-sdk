@@ -42,15 +42,16 @@ class TestC2BMakePayment(unittest.TestCase):
         }
         response = self.c2b.make_payment(self.payload)
         self.assertEqual(response["ResponseCode"], "0")
-        self.assertEqual(response["ResponseDesc"], 
-                         "The service request is processed successfully.")
+        self.assertEqual(
+            response["ResponseDesc"],
+            "The service request is processed successfully.")
         mock_make_payment.assert_called_once_with(self.payload)
 
     @patch('mpesa.payments.c2b.C2B.make_payment')
     def test_make_payment_validation_error(self, mock_make_payment):
         """Test if a validation error occurs with an invalid payload."""
         try:
-            PaymentRequest(**{"ShortCode": "123456"})  # Missing required fields
+            PaymentRequest(**{"ShortCode": "123456"})
         except ValidationError as e:
             mock_make_payment.side_effect = e
 

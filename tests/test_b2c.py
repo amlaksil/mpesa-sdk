@@ -37,7 +37,7 @@ class TestB2C(unittest.TestCase):
         """Test validation error for invalid payload."""
         with self.assertRaises(ValidationError) as context:
             self.b2c.make_payment(self.invalid_payload)
-        
+
         # Assert the ValidationError contains the expected message
         exception = context.exception
         self.assertTrue("Amount" in str(exception))

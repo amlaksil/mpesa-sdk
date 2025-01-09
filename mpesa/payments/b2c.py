@@ -1,4 +1,17 @@
 #!/usr/bin/python3
+"""
+This module provides the implementation of the Business-to-Customer (B2C)
+payment API for facilitating seamless and secure transactions between
+businesses and individual customers via M-PESA. It supports a variety of
+business use cases, such as:
+
+- Salary disbursements
+- Betting win payouts
+- Bulk payments
+- Cashback rewards
+- Promotional payouts
+- Loan disbursements
+"""
 from typing import Dict, Any
 from mpesa.config import Config
 from mpesa.utils.client import APIClient
@@ -15,6 +28,12 @@ logger = get_logger(__name__)
 
 
 class B2C(STKPush):
+    """
+    This class provides the functionality to initiate and manage B2C payments
+    via the M-PESA API. It extends the `STKPush` class to leverage shared
+    features, such as API communication and authentication, while adding
+    specific capabilities for B2C transactions.
+    """
     def __init__(
             self, base_url: str, access_token: str, client: APIClient = None):
         """
@@ -27,7 +46,7 @@ class B2C(STKPush):
         Defaults to an internal `APIClient`.
         """
         super().__init__(base_url, access_token, client)
-        self.endpoint = "/mpesa/b2c/v1/paymentrequest"
+        self.endpoint = Config.B2C_PAYMENT_REQUEST_ENDPOINT
 
     def make_payment(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
