@@ -43,7 +43,7 @@ class TestLogger(unittest.TestCase):
         self.temp_dir.cleanup()
         self.patcher.stop()
 
-    @patch.dict(os.environ, {"ENVIRONMENT": "DEV"})
+    @patch("mpesa.utils.logger.Config.ENVIRONMENT", "DEV")
     def test_logger_configuration(self):
         """
         Tests that the logger is configured with the correct handlers.
