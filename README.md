@@ -24,7 +24,7 @@ The M-Pesa Python SDK simplifies the integration of your Python applications wit
 Install the SDK using pip:
 
 ```bash
-pip install mpesa
+pip install mpesa_client
 ```
 
 ## Configuration Guide
@@ -226,7 +226,7 @@ ENVIRONMENT=TEST  # Disable console logs
 You can also set the environment programmatically to `TEST`:
 
 ```python
-from mpesa.config import Config
+from mpesa import Config
 
 Config.ENVIRONMENT = "TEST"  # Disables console logging
 ```

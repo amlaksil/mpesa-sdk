@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mpesa_client"
+version = "1.0.0"
+description="A Python SDK for seamless integration with the M-Pesa API, supporting STK Push payments, C2B, B2C payouts, and more."
+authors = [{name = "Silamlak Desye", email = "lamlak.lamlak19@gmail.com"}]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "pydantic>=2.10.0,<3.0.0",
+    "requests>=2.31.0,<3.0.0",
+    "python-dotenv>=1.0.1,<2.0.0",
+    "requests-oauthlib>=2.0.0,<3.0.0",
+    "requests-toolbelt>=1.0.0,<2.0.0",
+]
+
+dynamic = ["classifiers", "optional-dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/amlaksil/mpesa-sdk"
+Repository = "https://github.com/amlaksil/mpesa-sdk"
