@@ -1,0 +1,44 @@
+name: CD Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  deploy-to-pypi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip setuptools wheel twine build
+
+      - name: Build the package
+        run: python -m build
+
+      - name: Check if version exists on PyPI
+        run: |
+          PACKAGE_NAME="mpesa_client"
+          VERSION=$(python setup.py --version)
+          if curl -s https://pypi.org/pypi/$PACKAGE_NAME/$VERSION/json | grep -q "release_url"; then
+            echo "Version $VERSION already exists on PyPI. Skipping upload."
+            exit 0
+          fi
+
+      - name: Upload to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/*
+
+      - name: Deployment successful
+        run: echo "Package successfully uploaded to PyPI."
